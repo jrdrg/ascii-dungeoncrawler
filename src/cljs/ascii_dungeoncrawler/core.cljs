@@ -4,6 +4,7 @@
             [ascii-dungeoncrawler.systems.render :refer [mk-render-system]]
             [ascii-dungeoncrawler.systems.input :refer [input-system]]
             [ascii-dungeoncrawler.systems.movement :refer [movement-system]]
+            [ascii-dungeoncrawler.systems.collision :refer [collision-system]]
             [ascii-dungeoncrawler.systems.sprite :refer [mk-sprite-system]]))
 
 (enable-console-print!)
@@ -12,6 +13,7 @@
 
 ;; True if the game is running
 (defonce running (atom nil))
+(defonce last-timestamp (atom nil))
 (defonce debug-state (atom nil))
 
 (defonce renderer (pixi/create-renderer!))
@@ -22,12 +24,14 @@
   {:render {:renderer renderer
             :stage stage
             :sprites nil}
+   :fps nil
    :entities {}
    :components {}
    :systems {:input input-system
              :render (mk-render-system renderer stage)
              :sprite (mk-sprite-system renderer stage)
              :movement movement-system
+             :collision collision-system
              }
    :screens {:title {:systems [:input
                                :render]
@@ -35,6 +39,7 @@
                      :on-leave nil}
              :game {:systems [:input
                               :movement
+                              :collision
                               :sprite
                               :render]
                     :on-enter nil
@@ -55,12 +60,19 @@
                                [:player]
                                [:input]
                                [:sprite {:char "@" :draw? true :color 0xffaa00}]
-                               [:position {:x 40 :y 80}]
+                               [:position {:pos {:x 40 :y 80}}]
+                               [:collidable]
                                [:renderable]])
-      (ecs/add-entity :entity2 [[:position {:x 100 :y 200}]
-                                [:renderable]])
-      (ecs/add-entity :entity3 [[:position {:x 200 :y 150}]
-                                [:sprite {:char "X" :draw? true :color 0x00ff00}]])))
+
+      (ecs/add-entity :tree1 [[:position {:pos {:x 100 :y 200}}]
+                              [:sprite {:char "T" :draw? true :color 0x00ff00}]
+                              [:renderable]])
+
+      (ecs/add-entity :enemy1 [[:position {:pos {:x 200 :y 150}}]
+                               [:input]
+                               [:ai {:behavior :search-player}]
+                               [:sprite {:char "X" :draw? true :color 0xcc6690}]
+                               [:collidable]])))
 
 
 
@@ -94,7 +106,9 @@
   [state]
   (let [current-screen (:current-screen state)
         system-ids (get-systems-in-screen state)
-        systems (map (fn [system-id] (-> state :systems system-id)) system-ids)
+        systems (map (fn [system-id]
+                       (-> state :systems system-id))
+                     system-ids)
         update-fn (apply comp (reverse systems))]
     (assoc state :update-fn update-fn)))
 
@@ -122,11 +136,22 @@
          (reset! debug-state))))
 
 
+(defn update-fps
+  "Updates frames per second in the state."
+  [state]
+  (let [now (.now js/performance)
+        prev (or @last-timestamp now)
+        diff (/ (- now prev) 1000)
+        fps (/ 1 diff)]
+    (reset! last-timestamp now)
+    (assoc state :fps fps)))
+
 (defn game-loop
   [state]
   (when state
     (request-animation #(-> state
                             (next-state)
+                            (update-fps)
                             (game-loop)))))
 
 

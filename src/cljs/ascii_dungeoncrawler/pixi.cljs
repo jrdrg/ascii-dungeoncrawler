@@ -1,10 +1,11 @@
-(ns ascii-dungeoncrawler.pixi)
+(ns ascii-dungeoncrawler.pixi
+  (:require [ascii-dungeoncrawler.constants :refer [tile-size]]))
 
 (def tile-width 80)
 (def tile-height 40)
 
-(def width (* tile-width 16))
-(def height (* tile-height 16))
+(def width (* tile-width tile-size))
+(def height (* tile-height tile-size))
 
 (defonce textures (atom nil))
 

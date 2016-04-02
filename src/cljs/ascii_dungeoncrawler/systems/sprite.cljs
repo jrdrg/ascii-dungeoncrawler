@@ -11,20 +11,20 @@
 
 
 
-(defn sprite-from-texture
-  "Creates a sprite from sprite-texture with the given frame rectangle."
-  ([sprite-texture x y tile-size]
-   (sprite-from-texture sprite-texture x y tile-size tile-size))
-  ([sprite-texture x y w h]
-   (let [rect (js/PIXI.Rectangle. x y w h)]
-     (js/PIXI.Texture. sprite-texture rect))))
-
-
 (defn char-coords
   "Returns the 2-d coordinates given the index"
   [index]
   {:x (* tile-size (mod index tiles-per-row))
    :y (* tile-size (quot index tiles-per-row))})
+
+
+(defn sprite-from-texture!
+  "Creates a sprite from sprite-texture with the given frame rectangle."
+  ([sprite-texture x y tile-size]
+   (sprite-from-texture! sprite-texture x y tile-size tile-size))
+  ([sprite-texture x y w h]
+   (let [rect (js/PIXI.Rectangle. x y w h)]
+     (js/PIXI.Texture. sprite-texture rect))))
 
 
 (defn generate-base-texture!
@@ -36,42 +36,40 @@
     texture))
 
 
-(defn init-text-sprites! ;; TODO: do we need to pass the state in here?
+(defn init-text-sprites!
   "Renders all alphanumeric characters to a texture for use as sprites"
   [renderer stage]
-  (let [render-state {}
-        base-texture (generate-base-texture! renderer)
+  (let [base-texture (generate-base-texture! renderer)
         sprite (js/PIXI.Sprite. base-texture)]
 
     (println "Initializing text sprites")
     (println (str "height " (.-height base-texture) " width " (.-width base-texture)))
-    (pixi/add-child! stage sprite) ;; TODO: this is not necessary
 
     ;; Create a texture for each character in the image
     (doseq [[char index _] character-positions
             :let [{:keys [x y]} (char-coords index)
-                  char-texture (sprite-from-texture base-texture x y tile-size)]]
+                  char-texture (sprite-from-texture! base-texture x y tile-size)]]
       (.addTextureToCache js/PIXI.Texture char-texture char))
-    (do
-      (let [sprite (pixi/text-sprite! "@" {:x 350 :y 350})]
-        (aset sprite "tint" 0xff0000)
-        (pixi/add-child! stage sprite)))
     (println "Images initialized.")))
 
 
 
 (defn component->sprite!
-  [stage {:keys [sprite char draw? color]} position]
-  (let [change-color (fn [spr col] (if col
-                                     (do
-                                       (aset spr "tint" col)
-                                       spr)
-                                     spr))]
+  "Moves a sprite's position based on its position component, and creates
+  a new sprite if it doesn't exist."
+  [stage {:keys [sprite char draw? color]} {position :pos}]
+  (let [change-color! (fn [spr col]
+                        (if col
+                          (do
+                            (aset spr "tint" col)
+                            spr)
+                          spr))]
     (if sprite
-      (-> (pixi/move! sprite position) (change-color color))
+      (-> (pixi/move! sprite position)
+          (change-color! color))
       (let [sprite (pixi/text-sprite! char position)]
         (pixi/add-child! stage sprite)
-        (change-color sprite color)))))
+        (change-color! sprite color)))))
 
 
 (defn mk-sprite-system

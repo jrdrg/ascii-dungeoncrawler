@@ -18,7 +18,7 @@
               new-state (input/input-system initial-state)]
 
           (are [expected actual] (= expected actual)
-            (-> new-state :components :input) expected-component-data)))))
+            expected-component-data (-> new-state :components :input))))))
 
 
 (deftest same-key-mappings-should-be-unique
@@ -29,4 +29,4 @@
               new-state (input/input-system initial-state)]
 
           (are [expected actual] (= expected actual)
-            (-> new-state :components :input) expected-component-data)))))
+            expected-component-data (-> new-state :components :input))))))

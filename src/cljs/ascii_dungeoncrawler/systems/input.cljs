@@ -60,18 +60,23 @@
     key))
 
 
+(defn mk-update-input-component-data
+  [keys]
+  (fn
+    [component-map [entity-id _]]
+    (-> component-map
+        (assoc entity-id (->> keys (map map-input-key) (set))))))
+
+
 (defn input-system
   [state]
   (let [entities (ecs/entities-with-components state [:input :player])
         keys (:keys @keyState)
-        input-data (get-in state [:components :input])]
+        update-input-component-data (mk-update-input-component-data keys)]
     (if keys
       (-> state
-          (assoc-in [:components :input] (reduce (fn [accum [entity-id _]]
-                                                   (-> accum
-                                                       (assoc entity-id (->> keys (map map-input-key) (set)))))
-                                                 input-data
-                                                 entities)))
+          (update-in [:components :input]
+                     #(reduce update-input-component-data % entities)))
       (do
         (init-keyboard-events!)
         state))))
