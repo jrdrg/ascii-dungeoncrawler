@@ -3,6 +3,7 @@
             [ascii-dungeoncrawler.ecs :as ecs]
             [ascii-dungeoncrawler.systems.render :refer [mk-render-system]]
             [ascii-dungeoncrawler.systems.input :refer [input-system]]
+            [ascii-dungeoncrawler.systems.movement :refer [movement-system]]
             [ascii-dungeoncrawler.systems.sprite :refer [mk-sprite-system]]))
 
 (enable-console-print!)
@@ -12,6 +13,8 @@
 ;; True if the game is running
 (defonce running (atom nil))
 (defonce debug-state (atom nil))
+
+(defonce renderer (pixi/create-renderer!))
 
 
 (defn initial-state
@@ -24,12 +27,14 @@
    :systems {:input input-system
              :render (mk-render-system renderer stage)
              :sprite (mk-sprite-system renderer stage)
+             :movement movement-system
              }
    :screens {:title {:systems [:input
                                :render]
                      :on-enter nil
                      :on-leave nil}
              :game {:systems [:input
+                              :movement
                               :sprite
                               :render]
                     :on-enter nil
@@ -46,17 +51,16 @@
 (defn test-add-starting-entities
   [state]
   (-> state
-      (ecs/add-entity :entity1 [[:text {:text "Test text" :color 0x557799}]
-                                [:input]
-                                [:sprite {:char "@" :draw true :color 0xff0000}]
-                                [:moveable {}]
-                                [:position {:x 40 :y 80}]
-                                [:renderable]])
-      (ecs/add-entity :entity2 [[:moveable {}]
-                                [:position {:x 100 :y 200}]
+      (ecs/add-entity :player [[:text {:text "Test text" :color 0x557799}]
+                               [:player]
+                               [:input]
+                               [:sprite {:char "@" :draw? true :color 0xffaa00}]
+                               [:position {:x 40 :y 80}]
+                               [:renderable]])
+      (ecs/add-entity :entity2 [[:position {:x 100 :y 200}]
                                 [:renderable]])
       (ecs/add-entity :entity3 [[:position {:x 200 :y 150}]
-                                [:sprite {:char "X" :draw true :color 0x00ff00}]])))
+                                [:sprite {:char "X" :draw? true :color 0x00ff00}]])))
 
 
 
@@ -134,7 +138,6 @@
 (defn start-game!
   []
   (let [stage (pixi/create-container)
-        renderer (pixi/create-renderer)
         view (.-view renderer)
         state (mk-update-fn (initial-state renderer stage))
         test-state (test-add-starting-entities state)
@@ -144,10 +147,10 @@
     (set! (.-innerHTML (app-element)) nil)
     (append-to-dom! view)
 
-    (game-loop test-state)
-    ))
+    (game-loop test-state)))
 
 
 ;; Load images and then start running everything
-(pixi/load-images! (fn []
-                     (start-game!)))
+(pixi/load-images!
+ (fn []
+   (start-game!)))

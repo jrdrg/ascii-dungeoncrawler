@@ -24,11 +24,10 @@
    (js/PIXI.Container. (clj->js options))))
 
 
-(defn create-renderer
+(defn create-renderer!
   "Creates a renderer"
   ([]
-   (create-renderer {"backgroundColor" 0x330000}))
-   ;; (create-renderer {"backgroundColor" 0x55aa88}))
+   (create-renderer! {"backgroundColor" 0x330000}))
   ([options]
    (.autoDetectRenderer js/PIXI width height (clj->js options))))
 
@@ -53,9 +52,9 @@
   (aget js/PIXI.utils.TextureCache path))
 
 
-(defn create-text
+(defn create-text!
   ([text {:keys [x y]}]
-   (create-text text
+   (create-text! text
                 {:x x :y y}
                 {"font" "16px monospace" "fill" 0xffffff "align" "center"}))
   ([text {:keys [x y]} options]
@@ -65,16 +64,23 @@
      pixi-text)))
 
 
-(defn text-sprite
+(defn text-sprite!
   "Returns a sprite created from the provided ASCII character"
   ([char]
    (let [sprite (.fromFrame js/PIXI.Sprite char)]
      sprite))
   ([char {:keys [x y]}]
-   (let [sprite (text-sprite char)]
+   (let [sprite (text-sprite! char)]
      (aset sprite "x" x)
      (aset sprite "y" y)
      sprite)))
+
+
+(defn move!
+  [object {:keys [x y]}]
+  (aset object "x" x)
+  (aset object "y" y)
+  object)
 
 
 ;; Add/remove from containers

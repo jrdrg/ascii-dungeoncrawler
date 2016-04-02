@@ -8,7 +8,9 @@
 (def arrow-keys {38 :up
                  40 :down
                  37 :left
-                 39 :right})
+                 39 :right
+                 32 :space})
+
 
 (defn keyCode->arrow
   [keyCode]
@@ -19,7 +21,6 @@
   [e]
   (.preventDefault e)
   (let [keyCode (keyCode->arrow (aget e "keyCode"))]
-    (println (str "key down " keyCode " " (aget e "keyCode")))
     (swap! keyState update-in [:keys] #(conj % (keyword keyCode)))))
 
 
@@ -27,7 +28,6 @@
   [e]
   (.preventDefault e)
   (let [keyCode (keyCode->arrow (aget e "keyCode"))]
-    (println (str "key up " keyCode))
     (swap! keyState update-in [:keys] #(disj % (keyword keyCode)))))
 
 
@@ -50,14 +50,28 @@
   (init-keyboard-events!))
 
 
+(defn map-input-key
+  [key]
+  (condp contains? key
+    #{:up :W} :up
+    #{:down :S} :down
+    #{:left :A} :left
+    #{:right :D} :right
+    key))
+
+
 (defn input-system
   [state]
-  (let [entity-ids (ecs/entities-with-components state [:input])
+  (let [entities (ecs/entities-with-components state [:input :player])
         keys (:keys @keyState)
-        keys->state (fn [key] state)]
+        input-data (get-in state [:components :input])]
     (if keys
-      ;; for every entity in entity-ids, assoc (:keys keyState)
-      (assoc-in state state-keys-down {}) ;;
+      (-> state
+          (assoc-in [:components :input] (reduce (fn [accum [entity-id _]]
+                                                   (-> accum
+                                                       (assoc entity-id (->> keys (map map-input-key) (set)))))
+                                                 input-data
+                                                 entities)))
       (do
         (init-keyboard-events!)
         state))))

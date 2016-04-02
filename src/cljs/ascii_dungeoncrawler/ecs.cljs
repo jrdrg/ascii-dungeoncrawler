@@ -18,6 +18,7 @@
   [component-id]
   [:components component-id])
 
+
 (defn state-entity-path
   [entity-id]
   [:entities entity-id])
@@ -46,29 +47,22 @@
                  #(dissoc (or % {}) entity-id))))
 
 
-
-(defn add-component-data
-  [entity-id]
-  (fn [state component]
-    (add-component-to-entity state entity-id component)))
-
-
 (defn add-entity
-  "Adds an entity with given id to state"
+  "Adds an entity with given id to state."
   [state entity-id components]
-  (let [add-components (add-component-data entity-id)]
-    (reduce add-components state components)))
+  (let [add-component-data (fn [accum component]
+                             (add-component-to-entity accum entity-id component))]
+    (reduce add-component-data state components)))
 
 
 (defn rm-entity
+  "Removes the entity from state."
   [state entity-id]
-  (let [components (-> state :entities)]
-    (-> state
-        (update-in [:entities]
-                   #(disj entity-id))
-        ;; TODO: this is wrong, should be ->> instead
-        (reduce #(update-in [:components %] dissoc entity-id))
-        )))
+  (let [components (-> state (get-in [:entities entity-id])) ;; this is a set
+        removed-from-entities (update state :entities dissoc entity-id)
+        remove-component (fn [accum component]
+                           (update-in accum [:components component] dissoc entity-id))]
+    (reduce remove-component removed-from-entities components)))
 
 
 (defn entities-with-component
@@ -88,7 +82,7 @@
                           (let [ok? (every? #(entity-has-component? state entity-id %) component-ids)]
                             (if ok?
                               (conj accum (vector entity-id
-                                                  (mapv #(-> state :components % entity-id)
+                                                  (mapv #(get-in state [:components % entity-id])
                                                         component-ids)))
                               accum)))]
     (reduce add-entity-data [] first-component)))

@@ -53,25 +53,25 @@
                   char-texture (sprite-from-texture base-texture x y tile-size)]]
       (.addTextureToCache js/PIXI.Texture char-texture char))
     (do
-      (let [sprite (pixi/text-sprite "@" {:x 350 :y 350})]
+      (let [sprite (pixi/text-sprite! "@" {:x 350 :y 350})]
         (aset sprite "tint" 0xff0000)
         (pixi/add-child! stage sprite)))
     (println "Images initialized.")))
 
 
 
-(defn create-new-sprites!
-  "Creates sprites for entities that do not have one yet."
-  [state entity-ids sprite-texture]
-  state)
-
-
-(defn update-sprites!
-  [entity-ids sprites-texture stage]
-  (let []
-    entity-ids))
-
-
+(defn component->sprite!
+  [stage {:keys [sprite char draw? color]} position]
+  (let [change-color (fn [spr col] (if col
+                                     (do
+                                       (aset spr "tint" col)
+                                       spr)
+                                     spr))]
+    (if sprite
+      (-> (pixi/move! sprite position) (change-color color))
+      (let [sprite (pixi/text-sprite! char position)]
+        (pixi/add-child! stage sprite)
+        (change-color sprite color)))))
 
 
 (defn mk-sprite-system
@@ -79,6 +79,9 @@
   [renderer stage]
   (let [sprite-texture (init-text-sprites! renderer stage)]
     (fn [state]
-      (let [entities (ecs/entities-with-components state [:sprite :position])]
-        (update-sprites! entities sprite-texture stage)
-        state))))
+      (let [entities (ecs/entities-with-components state [:sprite :position])
+            update-sprite-components (fn [accum [entity-id [sprite-data position-data]]]
+                                       (let [sprite (component->sprite! stage sprite-data position-data)]
+                                         (-> accum
+                                             (assoc-in [:components :sprite entity-id :sprite] sprite))))]
+        (reduce update-sprite-components state entities)))))
