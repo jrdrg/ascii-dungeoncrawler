@@ -9,10 +9,13 @@
                   :components {}})
 
 
-(def initial-state {:entities {:entity1 #{:component1 :component2 :component3}}
+(def initial-state {:entities {:entity1 #{:component1 :component2 :component3}
+                               :entity2 #{:component2 :component4}}
                     :components {:component1 {:entity1 nil}
-                                 :component2 {:entity1 {:a 1 :b 2}}
-                                 :component3 {:entity1 nil}}})
+                                 :component2 {:entity1 {:a 1 :b 2}
+                                              :entity2 {:c 3 :d 4}}
+                                 :component3 {:entity1 nil}
+                                 :component4 {:entity2 {:e 5 :f 6}}}})
 
 
 (deftest get-entities-with-components-returns-vector
@@ -20,6 +23,14 @@
       (let [expected [[:entity1 [{:a 1 :b 2} nil]]]
             actual (ecs/entities-with-components initial-state [:component2 :component3])]
         (is (= expected actual)))))
+
+
+(deftest get-entities-with-optional-components-returns-vector
+  (testing "Missing optional components should return an empty data object"
+    (are [actual expected] (= actual expected)
+      (ecs/entities-with-components initial-state [:component2 :component3] [:component4])  [[:entity1 [{:a 1 :b 2} nil nil]]]
+      (ecs/entities-with-components initial-state [:component2] [:component3 :component4])  [[:entity1 [{:a 1 :b 2} nil nil]]
+                                                                                             [:entity2 [{:c 3 :d 4} nil {:e 5 :f 6}]]])))
 
 
 (deftest add-same-entity-should-overwrite

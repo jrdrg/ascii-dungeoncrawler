@@ -4,7 +4,7 @@
             [ascii-dungeoncrawler.systems.render :refer [mk-render-system]]
             [ascii-dungeoncrawler.systems.input :refer [input-system]]
             [ascii-dungeoncrawler.systems.movement :refer [movement-system]]
-            [ascii-dungeoncrawler.systems.collision :refer [collision-system]]
+            [ascii-dungeoncrawler.systems.collision :refer [collision-system on-damaged on-blocked]]
             [ascii-dungeoncrawler.systems.sprite :refer [mk-sprite-system]]))
 
 (enable-console-print!)
@@ -25,6 +25,7 @@
             :stage stage
             :sprites nil}
    :fps nil
+   :last-entity-id 0
    :entities {}
    :components {}
    :systems {:input input-system
@@ -56,19 +57,22 @@
 (defn test-add-starting-entities
   [state]
   (-> state
-      (ecs/add-entity :player [[:text {:text "Test text" :color 0x557799}]
-                               [:player]
+      (ecs/add-entity :player [[:player]
                                [:input]
                                [:sprite {:char "@" :draw? true :color 0xffaa00}]
-                               [:position {:pos {:x 40 :y 80}}]
-                               [:collidable]
-                               [:renderable]])
+                               [:position {:pos [40 80]}]
+                               [:velocity {:velocity [0 0]
+                                           :acceleration [0 0]}]
+                               [:collidable]])
 
-      (ecs/add-entity :tree1 [[:position {:pos {:x 100 :y 200}}]
-                              [:sprite {:char "T" :draw? true :color 0x00ff00}]
-                              [:renderable]])
+      (ecs/add-entity :text1 [[:text {:text "Test text" :color 0x557799}]
+                              [:position {:pos [60 70] }]])
 
-      (ecs/add-entity :enemy1 [[:position {:pos {:x 200 :y 150}}]
+      (ecs/add-entity :tree1 [[:position {:pos [100 200]}]
+                              [:sprite {:char "T" :draw? true :color 0x00ff00}]])
+
+      (ecs/add-entity :enemy1 [[:position {:pos [200 150]}]
+                               [:cause-damage {:dmg 1}]
                                [:input]
                                [:ai {:behavior :search-player}]
                                [:sprite {:char "X" :draw? true :color 0xcc6690}]
@@ -143,8 +147,10 @@
         prev (or @last-timestamp now)
         diff (/ (- now prev) 1000)
         fps (/ 1 diff)]
+    ;; (println (str "fps: " fps " last ts: " @last-timestamp " now: " now))
     (reset! last-timestamp now)
     (assoc state :fps fps)))
+
 
 (defn game-loop
   [state]

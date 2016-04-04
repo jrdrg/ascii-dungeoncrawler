@@ -2,17 +2,6 @@
   (:require [clojure.set :refer [intersection]]))
 
 
-;; :entities #{:1234 #{:moveable :renderable}}
-;;
-;; :components #{:moveable
-;;               {:1234 {:x 10
-;;                       :y 10}}
-;;               {:7890 {:x 40
-;;                       :y 10}}
-;;               :renderable {:1234 {:sprite "test.jpg"}
-;;                            :7890 {:sprite "something.png"}}
-;;               }
-
 
 (defn state-component-path
   [component-id]
@@ -25,8 +14,14 @@
 
 
 (defn entity-has-component?
+  "Returns true if the entity has the specified component."
   [state entity-id component-id]
   (contains? (or (get-in state [:entities entity-id]) #{}) component-id))
+
+
+(defn get-component
+  [state entity-id component-id]
+  (get-in state [:entities entity-id component-id]))
 
 
 (defn add-component-to-entity
@@ -49,10 +44,14 @@
 
 (defn add-entity
   "Adds an entity with given id to state."
-  [state entity-id components]
-  (let [add-component-data (fn [accum component]
-                             (add-component-to-entity accum entity-id component))]
-    (reduce add-component-data state components)))
+  ([state components]
+   (let [entity-id 1]
+     (add-entity state entity-id components)))
+
+  ([state entity-id components]
+   (let [add-component-data (fn [accum component]
+                              (add-component-to-entity accum entity-id component))]
+     (reduce add-component-data state components))))
 
 
 (defn rm-entity
@@ -65,10 +64,17 @@
     (reduce remove-component removed-from-entities components)))
 
 
-(defn entities-with-component
-  "Returns the ids of the entities that have the given component"
-  [state component-id]
-  (get-in state [:components component-id]))
+
+(defn mk-add-entity-data-to-list
+  "Returns a function which can be used to reduce a list of entity component data."
+  [state component-ids optional-component-ids]
+
+  (fn [list [entity-id]]
+    (let [ok? (every? #(entity-has-component? state entity-id %) component-ids)
+          get-component-data #(get-in state [:components % entity-id] nil)]
+      (if ok?
+        (conj list (vector entity-id (mapv get-component-data (into component-ids optional-component-ids))))
+        list))))
 
 
 (defn entities-with-components
@@ -76,13 +82,10 @@
   Loop through the first component's entities. For each entity, check if the id exists in all
   the other component sets, if so then add a vector with data for each component in the
   order requested."
-  [state component-ids]
-  (let [first-component (entities-with-component state (first component-ids))
-        add-entity-data (fn [accum [entity-id _]] ;; don't need entity data since we're just checking for the presence of the id
-                          (let [ok? (every? #(entity-has-component? state entity-id %) component-ids)]
-                            (if ok?
-                              (conj accum (vector entity-id
-                                                  (mapv #(get-in state [:components % entity-id])
-                                                        component-ids)))
-                              accum)))]
-    (reduce add-entity-data [] first-component)))
+
+  ([state component-ids]
+   (entities-with-components state component-ids nil))
+
+  ([state component-ids optional-component-ids]
+   (let [first-component-map (get-in state [:components (first component-ids)])]
+     (reduce (mk-add-entity-data-to-list state component-ids optional-component-ids) [] first-component-map))))
