@@ -1,5 +1,5 @@
 (ns ascii-dungeoncrawler.pixi
-  (:require [ascii-dungeoncrawler.constants :refer [tile-size]]))
+  (:require [ascii-dungeoncrawler.constants :refer [tile-size img-path]]))
 
 (def tile-width 80)
 (def tile-height 40)
@@ -40,7 +40,7 @@
   (if (= @textures true)
     (done)
     (do
-      (.load (.add js/PIXI.loader "img/cga.png")
+      (.load (.add js/PIXI.loader img-path)
              (do
                (reset! textures true)
                (println "Initialized base image.")
@@ -54,34 +54,43 @@
 
 
 (defn create-text!
-  ([text {:keys [x y]}]
+  ([text [x y]]
    (create-text! text
-                {:x x :y y}
+                [x y]
                 {"font" "16px monospace" "fill" 0xffffff "align" "center"}))
-  ([text {:keys [x y]} options]
+  ([text [x y] options]
    (let [pixi-text (js/PIXI.Text. text (clj->js options))]
      (aset pixi-text "x" x)
      (aset pixi-text "y" y)
      pixi-text)))
 
 
-(defn text-sprite!
+(defn char-sprite!
   "Returns a sprite created from the provided ASCII character"
   ([char]
    (let [sprite (.fromFrame js/PIXI.Sprite char)]
      sprite))
-  ([char {:keys [x y]}]
-   (let [sprite (text-sprite! char)]
+  ([char [x y]]
+   (let [sprite (char-sprite! char)]
      (aset sprite "x" x)
      (aset sprite "y" y)
      sprite)))
 
 
 (defn move!
-  [object {:keys [x y]}]
+  [object [x y]]
   (aset object "x" x)
   (aset object "y" y)
   object)
+
+
+(defn change-color!
+  [sprite color]
+  (if color
+    (do
+      (aset sprite "tint" color)
+      sprite)
+    sprite))
 
 
 ;; Add/remove from containers

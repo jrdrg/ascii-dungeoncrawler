@@ -34,3 +34,23 @@
     (are [actual expected] (= actual expected)
       (collision/collides? [1 1] [14 14]) true
       (collision/collides? [1 1] [18 18]) false)))
+
+
+
+
+(def collision-test-data [[:entity1 [{:pos [10 23]}]]
+                          [:entity2 [{:pos [50 50]}]]
+                          [:entity3 [{:pos [20 20]}]]])
+
+
+(deftest entity->pos-test
+  (testing "Should transform a map of x,y to a vector"
+    (are [actual expected] (= actual expected)
+      (collision/entity->pos (get collision-test-data 0)) [10 23])))
+
+
+(deftest get-collisions-test
+  (testing "Should return a list of collisions with the specified point"
+    (are [actual expected] (= actual expected)
+      (collision/get-collisions [15 15] collision-test-data)  [[:entity1 [10 23]]
+                                                                     [:entity3 [20 20]]] )))

@@ -1,8 +1,8 @@
 (ns ascii-dungeoncrawler.systems.sprite
-  (:require [ascii-dungeoncrawler.pixi :as pixi]
+  (:require [ascii-dungeoncrawler.constants :refer [tile-size img-path]]
+            [ascii-dungeoncrawler.pixi :as pixi]
             [ascii-dungeoncrawler.ecs :as ecs]))
 
-(def tile-size 16)
 (def tiles-per-row 32)
 (def character-range [32 127])
 (def ascii-symbols (map String.fromCodePoint (apply range character-range)))
@@ -27,11 +27,15 @@
      (js/PIXI.Texture. sprite-texture rect))))
 
 
+;;;;;;;;;;;;;;;;;;;;
+;; Initialization
+;;;;;;;;;;;;;;;;;;;;
+
 (defn generate-base-texture!
   "Creates a texture with all required alphanumeric symbols and returns it"
   [renderer]
   (let [container (pixi/create-container)
-        texture (pixi/texture-from-cache "img/cga.png")]
+        texture (pixi/texture-from-cache img-path)]
     (pixi/add-child! container texture)
     texture))
 
@@ -54,32 +58,55 @@
 
 
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; System helper functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn component->sprite!
   "Moves a sprite's position based on its position component, and creates
   a new sprite if it doesn't exist."
   [stage {:keys [sprite char draw? color]} {position :pos}]
-  (let [change-color! (fn [spr col]
-                        (if col
-                          (do
-                            (aset spr "tint" col)
-                            spr)
-                          spr))]
-    (if sprite
-      (-> (pixi/move! sprite position)
-          (change-color! color))
-      (let [sprite (pixi/text-sprite! char position)]
-        (pixi/add-child! stage sprite)
-        (change-color! sprite color)))))
 
+  (if sprite
+    (-> (pixi/move! sprite position)
+        (pixi/change-color! color))
+    (let [sprite (pixi/char-sprite! char position)]
+      (pixi/add-child! stage sprite)
+      (pixi/change-color! sprite color))))
+
+
+(defn mk-update-sprite-component-data
+  "Returns a function to update the sprite component data."
+  [stage]
+  (fn update-sprite-component-data
+    [component-map [entity-id [sprite-data position-data]]]
+    (-> component-map
+        (assoc-in [entity-id :sprite] (component->sprite! stage sprite-data position-data)))))
+
+
+(defn mk-update-text-component-data
+  [stage]
+  (fn update-text-component-data
+    [component-map [entity-id [text-data position-data]]]
+    (-> component-map
+        )))
+
+;;;;;;;;;;;;
+;; System
+;;;;;;;;;;;;
 
 (defn mk-sprite-system
-  "Main system function. Handles drawing sprites to the pixi stage."
+  "Main system function. Handles drawing sprites (and text) to the pixi stage."
   [renderer stage]
-  (let [sprite-texture (init-text-sprites! renderer stage)]
+  (let [sprite-texture (init-text-sprites! renderer stage)
+        update-sprite-components (mk-update-sprite-component-data stage)
+        update-text-components (mk-update-text-component-data stage)]
     (fn [state]
-      (let [entities (ecs/entities-with-components state [:sprite :position])
-            update-sprite-components (fn [accum [entity-id [sprite-data position-data]]]
-                                       (let [sprite (component->sprite! stage sprite-data position-data)]
-                                         (-> accum
-                                             (assoc-in [:components :sprite entity-id :sprite] sprite))))]
-        (reduce update-sprite-components state entities)))))
+      (let [sprite-entities (ecs/entities-with-components state [:sprite :position])
+            text-entities (ecs/entities-with-components state [:text :position])]
+        (-> state
+            (update-in [:components :sprite]
+                       #(reduce update-sprite-components % sprite-entities))
+            (update-in [:components :text]
+                       #(reduce update-text-components % text-entities)))))))

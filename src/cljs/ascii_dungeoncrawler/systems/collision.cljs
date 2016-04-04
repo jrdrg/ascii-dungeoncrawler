@@ -3,6 +3,15 @@
             [ascii-dungeoncrawler.ecs :as ecs]))
 
 
+(defn on-damaged
+  [entity1 entity2]
+  )
+
+(defn on-blocked
+  [entity1 entity2]
+  )
+
+
 (defn between?
   [min value max]
   (and
@@ -35,15 +44,30 @@
   (not (= pos next-pos)))
 
 
-(defn collides-with-any?
-  [{:keys [x y]} entities]
+(defn entity->pos
+  "Transforms a vector of entity position component data to [x y] form.
+  Data is in the form [:entity-id [{:pos {:x 1 :y 1}}]]"
+  [[entity-id [{[x y] :pos}]]]
+  [x y])
 
-  (let [entity->pos (fn [[entity-id [{pos :pos}]]]
-                      (let [{x1 :x y1 :y} pos]
-                        [x1 y1]))
-        collision? (some #(when (collides? [x y] (entity->pos %)) %)
-                         entities)]
-    collision?))
+
+(defn get-collisions
+  "Returns a map of all collisions for the given [x y] coordinates."
+  [[x y] entities]
+
+  (let [collided-with? (partial filter #(collides? [x y] (entity->pos %)))
+        get-position (partial map (fn [[entity-id [{[px py] :pos}]]]
+                                    [entity-id [px py]]))
+        collisions->vec (comp get-position collided-with?)]
+    (collisions->vec entities)))
+
+
+(defn collides-with-any?
+  "True if a <tile-size> rectangle at [x y] collides with any of entities"
+  [[x y] entities]
+
+  (let [collision? #(when (collides? [x y] (entity->pos %)) %)]
+    (some collision? entities)))
 
 
 (defn mk-update-position-component-data
@@ -52,9 +76,11 @@
   component map with updated position values."
   [entities-with-position]
 
-  (fn [component-map [entity-id [{:keys [pos next-pos]}] :as entity]]
-    (let [{x1 :x y1 :y} pos
-          {x2 :x y2 :y} next-pos]
+  (fn [component-map [entity-id [{:keys [pos next-pos]} {:keys [velocity acceleration]}] :as entity]]
+    (let [[x1 y1] pos
+          [vx vy] velocity
+          [ax ay] acceleration
+          ]
       (if (and
            (moved? pos (or next-pos pos))
            (not (collides-with-any? next-pos
@@ -64,10 +90,17 @@
         component-map))))
 
 
+;;;;;;;;;;;
+;; System
+;;;;;;;;;;;
+
 (defn collision-system
-  "Handle collisions between entities, and update positions appropriately."
+  "Handle collisions between entities, and update positions/velocities appropriately."
   [state]
-  (let [entities (ecs/entities-with-components state [:position])
+  (let [entities (ecs/entities-with-components state [:position] [:velocity])
+        get-velocity (fn [[entity-id _]] (ecs/get-component state entity-id :velocity))
         update-position-component-data (mk-update-position-component-data entities)]
+
     (-> state
-        (update-in [:components :position] #(reduce update-position-component-data % entities)))))
+        (update-in [:components :position] #(->> (filter get-velocity entities)
+                                                 (reduce update-position-component-data %))))))
