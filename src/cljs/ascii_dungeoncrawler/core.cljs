@@ -76,7 +76,15 @@
                                [:input]
                                [:ai {:behavior :search-player}]
                                [:sprite {:char "X" :draw? true :color 0xcc6690}]
-                               [:collidable]])))
+                               [:collidable]])
+      (ecs/add-entity :enemy2 [[:position {:pos [216 150]}]
+                               [:cause-damage {:dmg 1}]
+                               [:input]
+                               [:ai {:behavior :search-player}]
+                               [:sprite {:char "X" :draw? true :color 0xcc6690}]
+                               [:collidable]])
+
+      ))
 
 
 
@@ -147,7 +155,6 @@
         prev (or @last-timestamp now)
         diff (/ (- now prev) 1000)
         fps (/ 1 diff)]
-    ;; (println (str "fps: " fps " last ts: " @last-timestamp " now: " now))
     (reset! last-timestamp now)
     (assoc state :fps fps)))
 

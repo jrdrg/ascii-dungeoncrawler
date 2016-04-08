@@ -20,10 +20,10 @@
       (collision/rect-intersects? [1 1 10 10] [5 5 15 15])     true
       (collision/rect-intersects? [1 1 10 10] [1 1 20 20])     true
       (collision/rect-intersects? [1 1 10 10] [1 5 50 50])     true
-      (collision/rect-intersects? [1 1 10 10] [1 10 10 20])    true
-      (collision/rect-intersects? [10 10 20 20] [1 1 10 10])   true
-      (collision/rect-intersects? [10 10 20 20] [10 20 50 50]) true
-      (collision/rect-intersects? [1 1 10 10] [10 1 30 30])    true
+      (collision/rect-intersects? [1 1 10 10] [1 10 10 20])    false
+      (collision/rect-intersects? [10 10 20 20] [1 1 10 10])   false
+      (collision/rect-intersects? [10 10 20 20] [10 20 50 50]) false
+      (collision/rect-intersects? [1 1 10 10] [10 1 30 30])    false
       (collision/rect-intersects? [10 10 20 20] [1 1 5 5])     false
       (collision/rect-intersects? [1 1 10 10] [11 11 20 20])   false
       (collision/rect-intersects? [10 10 20 20] [10 30 50 50]) false)))
