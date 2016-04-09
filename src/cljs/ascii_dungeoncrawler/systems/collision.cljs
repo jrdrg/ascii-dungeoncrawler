@@ -67,14 +67,6 @@
     (collisions->vec entities)))
 
 
-(defn collides-with-any?
-  "True if a <tile-size> rectangle at [x y] collides with any of entities"
-  [[x y] entities]
-
-  (let [collision? #(when (collides? [x y] (entity->pos %)) %)]
-    (some collision? entities)))
-
-
 (defn order-coords
   [min1 max1 min2 max2]
   (if (< min1 min2)
@@ -98,19 +90,28 @@
 
 (defn adjust-position
   "Given [x1 y1] and its velocity, returns a new vector [x1' y1'] representing the new position
-  to avoid collision with [x2 y2]"
+  to avoid collision with [x2 y2]. Adjusts the dimension with the smallest intersection amount first."
   [p1 p2 [vel-x vel-y]]
   (let [neg (partial * -1)
-        [_ intersect-y] (intersect-amounts p1 p2)
-        y-adjusted (add-vectors p1 [0 (neg intersect-y)])
-        [intersect-x _] (intersect-amounts y-adjusted p2)
-        x-adjusted (add-vectors y-adjusted [(neg intersect-x 0)])]
-    x-adjusted))
+        [int-x int-y] (intersect-amounts p1 p2)
+        [abs-int-x abs-int-y] (mapv #(.abs js/Math %) [int-x int-y])]
+    (cond
+      (< abs-int-x abs-int-y)
+      (let [x-adjusted (add-vectors p1 [(neg int-x) 0])
+            [_ intersect-y] (intersect-amounts x-adjusted p2)]
+        (add-vectors x-adjusted [0 (neg intersect-y)]))
+      (> abs-int-x abs-int-y)
+      (let [y-adjusted (add-vectors p1 [0 (neg int-y)])
+            [intersect-x _] (intersect-amounts y-adjusted p2)]
+        (add-vectors y-adjusted [(neg intersect-x) 0]))
+      :else p1)
+    ))
 
 
 (defn update-entity-position
   [component-map entity-id position]
   (assoc-in component-map [entity-id :pos] position))
+
 
 (defn update-entity-velocity-if-stopped
   [component-map entity-id stopped?]
@@ -140,10 +141,6 @@
   (fn [component-map [entity-id [position-data velocity-data] :as entity]]
     (let [{:keys [pos next-pos]} position-data
           {:keys [velocity acceleration]} velocity-data
-          [x1 y1] pos
-          [vx vy] velocity
-          [ax ay] acceleration
-          moving? (not (= velocity [0 0]))
           other-entities (remove #{entity} entities-with-position)
           real-next-pos (calculate-next-position pos next-pos velocity other-entities)
           stopped? (not (= next-pos real-next-pos))
@@ -162,9 +159,10 @@
   "Handle collisions between entities, and update positions/velocities appropriately."
   [state]
   (let [entities (ecs/entities-with-components state [:position] [:velocity :collidable])
-        get-velocity (fn [[entity-id [_ velocity _]]] velocity)
+        get-velocity (fn [[_ [_ velocity _]]] velocity)
         update-position-component-data (mk-update-position-component-data entities)]
 
     (-> state
-        (update-in [:components :position] #(->> (filter get-velocity entities)
-                                                 (reduce update-position-component-data %))))))
+        (update-in [:components :position]
+                   #(->> (filter get-velocity entities)
+                         (reduce update-position-component-data %))))))

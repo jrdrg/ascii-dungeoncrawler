@@ -53,30 +53,6 @@
   (aget js/PIXI.utils.TextureCache path))
 
 
-(defn create-text!
-  ([text [x y]]
-   (create-text! text
-                [x y]
-                {"font" "16px monospace" "fill" 0xffffff "align" "center"}))
-  ([text [x y] options]
-   (let [pixi-text (js/PIXI.Text. text (clj->js options))]
-     (aset pixi-text "x" x)
-     (aset pixi-text "y" y)
-     pixi-text)))
-
-
-(defn char-sprite!
-  "Returns a sprite created from the provided ASCII character"
-  ([char]
-   (let [sprite (.fromFrame js/PIXI.Sprite char)]
-     sprite))
-  ([char [x y]]
-   (let [sprite (char-sprite! char)]
-     (aset sprite "x" x)
-     (aset sprite "y" y)
-     sprite)))
-
-
 (defn move!
   [object [x y]]
   (aset object "x" x)
@@ -91,6 +67,26 @@
       (aset sprite "tint" color)
       sprite)
     sprite))
+
+
+(defn create-text!
+  ([text [x y]]
+   (create-text! text
+                [x y]
+                {"font" "16px monospace" "fill" 0xffffff "align" "center"}))
+  ([text [x y] options]
+   (let [pixi-text (js/PIXI.Text. text (clj->js options))]
+     (move! pixi-text [x y]))))
+
+
+(defn char-sprite!
+  "Returns a sprite created from the provided ASCII character"
+  ([char]
+   (let [sprite (.fromFrame js/PIXI.Sprite char)]
+     sprite))
+  ([char [x y]]
+   (let [sprite (char-sprite! char)]
+     (move! sprite [x y]))))
 
 
 ;; Add/remove from containers
