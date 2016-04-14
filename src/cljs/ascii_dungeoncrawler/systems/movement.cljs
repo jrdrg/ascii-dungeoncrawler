@@ -48,18 +48,13 @@
     (new-acceleration current-acceleration key)))
 
 
-(defn mk-update-velocity-fn
-  [key]
-  (fn [current-velocity current-acceleration]
-    (new-velocity current-velocity current-acceleration)))
-
-
 (defn update-position-component-data
   "Given a position component map and a set of input data for an entity, returns a new
   position component map with the entity's position updated to reflect that input data."
   [component-map [entity-id [input-data {:keys [pos]} {:keys [velocity]}]]]
 
-  (if (or (seq input-data) (not (= velocity [0 0])))
+  (if (or (seq input-data)
+          (not= velocity [0 0]))
     (-> component-map
         (assoc-in [entity-id :next-pos] (new-position pos velocity)))
     component-map))
@@ -70,11 +65,12 @@
   velocity component map with the entity's velocity updated to reflect that input data."
   [component-map [entity-id [input-data _ {:keys [velocity acceleration]}]]]
 
-  (if (or (seq input-data) (not (= velocity [0 0])) (not (= acceleration [0 0])))
-    (let [update-vel (apply comp (map mk-update-velocity-fn input-data))
-          update-accel (apply comp (map mk-update-acceleration-fn input-data))
+  (if (or (seq input-data)
+          (not= velocity [0 0])
+          (not= acceleration [0 0]))
+    (let [update-accel (apply comp (map mk-update-acceleration-fn input-data))
           next-accel (update-accel [0 0])
-          next-velocity (update-vel (mapv decrease-speed velocity) next-accel)]
+          next-velocity (new-velocity (mapv decrease-speed velocity) next-accel)]
 
       (-> component-map
           (assoc-in [entity-id :velocity] next-velocity)
@@ -89,5 +85,4 @@
   (let [entities (ecs/entities-with-components state [:input :position :velocity])]
     (-> state
         (update-in [:components :velocity] #(reduce update-velocity-component-data % entities))
-        (update-in [:components :position] #(reduce update-position-component-data % entities))
-        )))
+        (update-in [:components :position] #(reduce update-position-component-data % entities)))))

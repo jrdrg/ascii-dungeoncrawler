@@ -1,6 +1,7 @@
 (ns ascii-dungeoncrawler.test
   (:require-macros [expectations.cljs :as ecljs])
-  (:require [expectations :refer-macros [expect]]
+  (:require [pjstadig.humane-test-output]
+            [expectations :refer-macros [expect]]
             ;; [cljs.test :refer-macros [deftest is testing run-tests run-all-tests]]
             [ascii-dungeoncrawler.ecs-test]))
 

@@ -4,9 +4,9 @@
             [ascii-dungeoncrawler.ecs :as ecs]))
 
 (def tiles-per-row 32)
-(def character-range [32 127])
+(def character-range [32 255])
 (def ascii-symbols (map String.fromCodePoint (apply range character-range)))
-(def character-positions (map #(vector % %2 %3)
+(def character-positions (map vector
                               ascii-symbols (range) (iterate #(+ tile-size %) 0) ))
 
 
@@ -81,8 +81,9 @@
   [stage]
   (fn update-sprite-component-data
     [component-map [entity-id [sprite-data position-data]]]
-    (-> component-map
-        (assoc-in [entity-id :sprite] (component->sprite! stage sprite-data position-data)))))
+    (assoc-in component-map
+              [entity-id :sprite]
+              (component->sprite! stage sprite-data position-data))))
 
 
 (defn mk-update-text-component-data

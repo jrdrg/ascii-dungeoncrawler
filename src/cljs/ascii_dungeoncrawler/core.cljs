@@ -4,8 +4,9 @@
             [ascii-dungeoncrawler.systems.render :refer [mk-render-system]]
             [ascii-dungeoncrawler.systems.input :refer [input-system]]
             [ascii-dungeoncrawler.systems.movement :refer [movement-system]]
-            [ascii-dungeoncrawler.systems.collision :refer [collision-system on-damaged on-blocked]]
-            [ascii-dungeoncrawler.systems.sprite :refer [mk-sprite-system]]))
+            [ascii-dungeoncrawler.systems.collision :refer [collision-system on-damaged]]
+            [ascii-dungeoncrawler.systems.sprite :refer [mk-sprite-system]]
+            [ascii-dungeoncrawler.systems.tilemap :refer [mk-tilemap-system]]))
 
 (enable-console-print!)
 
@@ -33,6 +34,7 @@
              :sprite (mk-sprite-system renderer stage)
              :movement movement-system
              :collision collision-system
+             :tilemap (mk-tilemap-system stage)
              }
    :screens {:title {:systems [:input
                                :render]
@@ -41,6 +43,7 @@
              :game {:systems [:input
                               :movement
                               :collision
+                              :tilemap
                               :sprite
                               :render]
                     :on-enter nil
@@ -53,6 +56,22 @@
    :update-fn nil
    })
 
+(defn mk-tree [idx]
+  (fn [state] (ecs/add-entity state (str "tree" idx) [[:position {:pos [112 (+ 208 (* idx 16))]}]
+                                                      [:sprite {:char "T" :draw? true :color 0x00ff00}]
+                                                      ])))
+
+(defn mk-tree2 [idx]
+  (fn [state] (ecs/add-entity state (str "tree2" idx) [[:position {:pos [896 (+ 208 (* idx 16))]}]
+                                                      [:sprite {:char "T" :draw? true :color 0x00ff00}]
+                                                      [:collidable true]
+                                                      ])))
+
+(defn mk-x [idx]
+  (fn [state] (ecs/add-entity state (str "x" idx) [[:position {:pos [(+ 208 (* idx 16)) 144]}]
+                                                   [:collidable true]
+                                                   [:sprite {:char "#" :draw? true :color 0x557799}]
+                                                   ])))
 
 (defn test-add-starting-entities
   [state]
@@ -71,7 +90,11 @@
       (ecs/add-entity :tree1 [[:position {:pos [100 200]}]
                               [:sprite {:char "T" :draw? true :color 0x00ff00}]])
 
-      (ecs/add-entity :enemy1 [[:position {:pos [200 150]}]
+      ((apply comp (map mk-x (range 20))))
+      ((apply comp (map mk-tree (range 15))))
+      ((apply comp (map mk-tree2 (range 20))))
+
+      (ecs/add-entity :enemy1 [[:position {:pos [196 144]}]
                                [:cause-damage {:dmg 1}]
                                [:input]
                                [:ai {:behavior :search-player}]
@@ -141,8 +164,8 @@
 
 (defn next-state
   [state]
-  (let [{:keys [renderer stage]} (-> state :render)
-        update-fn (-> state :update-fn)]
+  (let [{:keys [renderer stage]} (:render state)
+        update-fn (:update-fn state)]
     (->> state
          (update-fn)
          (reset! debug-state))))
@@ -189,6 +212,4 @@
 
 
 ;; Load images and then start running everything
-(pixi/load-images!
- (fn []
-   (start-game!)))
+(pixi/load-images! start-game!)

@@ -46,7 +46,7 @@
 
 (defn moved?
   [pos next-pos]
-  (not (= pos next-pos)))
+  (not= pos next-pos))
 
 
 (defn entity->pos
@@ -122,9 +122,9 @@
 
 (defn calculate-next-position
   [position next-pos velocity other-entities]
-  (let [adjusted (reduce (fn [accum-pos [entity-id [position-data _]]]
+  (let [adjusted (reduce (fn [accum-pos [entity-id [position-data _ collidable-data]]]
                            (let [{other-pos :pos} position-data]
-                             (if (collides? accum-pos other-pos)
+                             (if (and collidable-data (collides? accum-pos other-pos))
                                (adjust-position accum-pos other-pos velocity)
                                accum-pos)))
                          next-pos
@@ -143,7 +143,7 @@
           {:keys [velocity acceleration]} velocity-data
           other-entities (remove #{entity} entities-with-position)
           real-next-pos (calculate-next-position pos next-pos velocity other-entities)
-          stopped? (not (= next-pos real-next-pos))
+          stopped? (not= next-pos real-next-pos)
           ]
       (if (moved? pos (or next-pos pos))
         (-> component-map
@@ -164,5 +164,6 @@
 
     (-> state
         (update-in [:components :position]
-                   #(->> (filter get-velocity entities)
-                         (reduce update-position-component-data %))))))
+                   #(reduce update-position-component-data
+                            %
+                            (filter get-velocity entities))))))

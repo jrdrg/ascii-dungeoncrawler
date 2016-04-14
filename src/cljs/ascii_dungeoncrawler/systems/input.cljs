@@ -64,8 +64,7 @@
   [keys]
   (fn
     [component-map [entity-id _]]
-    (-> component-map
-        (assoc entity-id (->> keys (map map-input-key) (set))))))
+    (assoc component-map entity-id (->> keys (map map-input-key) (set)))))
 
 
 (defn input-system
@@ -74,9 +73,9 @@
         keys (:keys @keyState)
         update-input-component-data (mk-update-input-component-data keys)]
     (if keys
-      (-> state
-          (update-in [:components :input]
-                     #(reduce update-input-component-data % entities)))
+      (update-in state
+                 [:components :input]
+                 #(reduce update-input-component-data % entities))
       (do
         (init-keyboard-events!)
         state))))

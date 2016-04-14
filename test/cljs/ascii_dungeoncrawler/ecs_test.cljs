@@ -1,5 +1,6 @@
 (ns ascii-dungeoncrawler.ecs-test
-  (:require [cljs.test :refer-macros [deftest is testing are]]
+  (:require [pjstadig.humane-test-output]
+            [cljs.test :refer-macros [deftest is testing are]]
             [ascii-dungeoncrawler.ecs :as ecs]))
 
 (enable-console-print!)

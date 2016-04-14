@@ -39,12 +39,11 @@
   [done]
   (if (= @textures true)
     (done)
-    (do
-      (.load (.add js/PIXI.loader img-path)
-             (do
-               (reset! textures true)
-               (println "Initialized base image.")
-               done)))))
+    (.load (.add js/PIXI.loader img-path)
+           (do
+             (reset! textures true)
+             (println "Initialized base image.")
+             done))))
 
 
 (defn texture-from-cache
@@ -86,7 +85,10 @@
      sprite))
   ([char [x y]]
    (let [sprite (char-sprite! char)]
-     (move! sprite [x y]))))
+     (move! sprite [x y])))
+  ([char [x y] color]
+   (let [sprite (char-sprite! char [x y])]
+     (change-color! sprite color))))
 
 
 ;; Add/remove from containers

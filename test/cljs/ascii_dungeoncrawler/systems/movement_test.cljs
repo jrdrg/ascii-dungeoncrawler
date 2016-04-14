@@ -21,9 +21,10 @@
 
 (deftest should-update-position
   (testing "Movement system should update position based on the velocity, and velocity based on the input keys"
-    (let [existing-velocity-state (assoc-in initial-state [:components :velocity] {:entity1 {:velocity [0 -3]}
-                                                                                   :entity2 {:velocity [-3 3]}
-                                                                                   :entity3 {:velocity [3 0]}})
+    (let [existing-velocity-state (assoc-in initial-state
+                                            [:components :velocity] {:entity1 {:velocity [0 -3]}
+                                                                     :entity2 {:velocity [-3 3]}
+                                                                     :entity3 {:velocity [3 0]}})
           expected-position-data {:entity1 {:pos [1 2]
                                             :next-pos [1 (- 2 speed)]}
                                   :entity2 {:pos [10 20]
@@ -38,8 +39,10 @@
                                             :acceleration [3 0]}}]
 
       (are [expected actual] (= expected actual)
-        expected-position-data (-> (movement/movement-system existing-velocity-state) :components :position)
-        expected-velocity-data (-> (movement/movement-system initial-state) :components :velocity)))))
+        expected-position-data (-> (movement/movement-system existing-velocity-state)
+                                   :components :position)
+        expected-velocity-data (-> (movement/movement-system initial-state)
+                                   :components :velocity)))))
 
 
 ;; (deftest should-ignore-unknown-keys
