@@ -34,7 +34,7 @@
 (defn generate-base-texture!
   "Creates a texture with all required alphanumeric symbols and returns it"
   [renderer]
-  (let [container (pixi/create-container)
+  (let [container (pixi/create-container!)
         texture (pixi/texture-from-cache img-path)]
     (pixi/add-child! container texture)
     texture))

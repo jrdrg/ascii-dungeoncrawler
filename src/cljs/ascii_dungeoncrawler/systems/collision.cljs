@@ -96,21 +96,24 @@
         [int-x int-y] (intersect-amounts p1 p2)
         [abs-int-x abs-int-y] (mapv #(.abs js/Math %) [int-x int-y])]
     (cond
+
       (< abs-int-x abs-int-y)
       (let [x-adjusted (add-vectors p1 [(neg int-x) 0])
             [_ intersect-y] (intersect-amounts x-adjusted p2)]
         (add-vectors x-adjusted [0 (neg intersect-y)]))
+
       (> abs-int-x abs-int-y)
       (let [y-adjusted (add-vectors p1 [0 (neg int-y)])
             [intersect-x _] (intersect-amounts y-adjusted p2)]
         (add-vectors y-adjusted [(neg intersect-x) 0]))
+
       :else p1)
     ))
 
 
 (defn update-entity-position
   [component-map entity-id position]
-  (assoc-in component-map [entity-id :pos] position))
+  (assoc-in component-map [entity-id :pos] (mapv #(.round js/Math %) position)))
 
 
 (defn update-entity-velocity-if-stopped
@@ -146,8 +149,9 @@
           stopped? (not= next-pos real-next-pos)
           ]
       (if (moved? pos (or next-pos pos))
-        (-> component-map
-            (update-entity-position entity-id (calculate-next-position pos next-pos velocity other-entities)))
+        (update-entity-position component-map
+                                entity-id
+                                real-next-pos)
         component-map))))
 
 
@@ -162,8 +166,8 @@
         get-velocity (fn [[_ [_ velocity _]]] velocity)
         update-position-component-data (mk-update-position-component-data entities)]
 
-    (-> state
-        (update-in [:components :position]
-                   #(reduce update-position-component-data
-                            %
-                            (filter get-velocity entities))))))
+    (update-in state
+               [:components :position]
+               #(reduce update-position-component-data
+                        %
+                        (filter get-velocity entities)))))

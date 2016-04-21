@@ -17,7 +17,7 @@
 
 ;; Create pixi objects
 
-(defn create-container
+(defn create-container!
   "Creates a PIXI container."
   ([]
    (js/PIXI.Container.))

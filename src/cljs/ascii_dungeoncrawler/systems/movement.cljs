@@ -55,8 +55,7 @@
 
   (if (or (seq input-data)
           (not= velocity [0 0]))
-    (-> component-map
-        (assoc-in [entity-id :next-pos] (new-position pos velocity)))
+    (assoc-in component-map [entity-id :next-pos] (new-position pos velocity))
     component-map))
 
 

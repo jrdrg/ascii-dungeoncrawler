@@ -42,8 +42,8 @@
                      :on-leave nil}
              :game {:systems [:input
                               :movement
-                              :collision
                               :tilemap
+                              :collision
                               :sprite
                               :render]
                     :on-enter nil
@@ -198,7 +198,7 @@
 
 (defn start-game!
   []
-  (let [stage (pixi/create-container)
+  (let [stage (pixi/create-container!)
         view (.-view renderer)
         state (mk-update-fn (initial-state renderer stage))
         test-state (test-add-starting-entities state)

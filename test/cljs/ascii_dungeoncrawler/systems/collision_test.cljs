@@ -54,4 +54,4 @@
   (testing "Should return a list of collisions with the specified point"
     (are [actual expected] (= actual expected)
       (collision/get-collisions [15 15] collision-test-data)  [[:entity1 [10 23]]
-                                                                     [:entity3 [20 20]]] )))
+                                                               [:entity3 [20 20]]] )))
