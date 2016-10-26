@@ -8,7 +8,7 @@
 ;; (def max-velocity 10)
 ;; (def max-acceleration 7)
 (def max-velocity 7)
-(def max-acceleration 4)
+(def max-acceleration 5)
 
 (def slow-down 0.9)
 

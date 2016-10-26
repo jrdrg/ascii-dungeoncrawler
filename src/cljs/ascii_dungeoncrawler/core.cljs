@@ -1,6 +1,7 @@
 (ns ascii-dungeoncrawler.core
   (:require [ascii-dungeoncrawler.pixi :as pixi]
             [ascii-dungeoncrawler.ecs :as ecs]
+            [ascii-dungeoncrawler.systems.ai :refer [ai-system]]
             [ascii-dungeoncrawler.systems.render :refer [mk-render-system]]
             [ascii-dungeoncrawler.systems.input :refer [input-system]]
             [ascii-dungeoncrawler.systems.movement :refer [movement-system]]
@@ -35,12 +36,14 @@
              :movement movement-system
              :collision collision-system
              :tilemap (mk-tilemap-system stage)
+             :ai ai-system
              }
    :screens {:title {:systems [:input
                                :render]
                      :on-enter nil
                      :on-leave nil}
              :game {:systems [:input
+                              :ai
                               :movement
                               :tilemap
                               :collision
